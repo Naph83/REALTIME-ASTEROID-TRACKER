@@ -1,0 +1,56 @@
+#Asteroid Tracker program:
+#Maintains list of asteroids passing earth in real-time using NASA's NEO API. Captures asteroid name, diameter, velocity, date/time of cloest approach, and distance from Earth. Also indicates whether or not asteroid is hazardous to Earth.
+#Author: Naphiysh Amiyr Evans
+
+import requests
+import json
+import time
+
+
+#Initialize today's Date
+CurrentDate = time.strftime('%Y-%m-%d', time.gmtime())
+CalendarDate = time.strftime('%A, %B %d %Y', time.gmtime())
+
+print('Today is: ' + CurrentDate, end = " ")
+print ('  (' + CalendarDate + ')')
+print()
+
+#set url as string variable -----> inject real-time date (CurrentDate) into url
+url = "https://api.nasa.gov/neo/rest/v1/feed?start_date=" + CurrentDate + "&end_date=" + CurrentDate + "&api_key=DEMO_KEY"
+
+#Call API to get real-time data
+response_API = requests.get(url, verify = True)
+
+#Print API connection status
+if response_API.status_code ==200:
+    print('API REQUEST STATUS: ', end = " ")
+    print('\033[1;32;40m SUCCESSFUL \033[0;0m')
+    print()
+
+#initialize variable as json object
+result = response_API.json()
+
+# print number of asteroids passing earth
+print("Today " + str(result["element_count"]) + " asteroids will be passing close to planet Earth:")
+print()
+asteroids = result["near_earth_objects"]
+
+#Parse asteroid data into array, then print name, diameter, velocity, distance from earth,hazard/non-hazard
+for asteroid in asteroids:
+    for field in asteroids[asteroid]:
+        try:
+            print('Asteroid Name: ' + field["name"])
+            print("Estimated Diameter: " + str(round((field["estimated_diameter"]["meters"]["estimated_diameter_min"]+field["estimated_diameter"]["meters"]["estimated_diameter_max"])/2)) + " meters")
+            print("Velocity: " + str(field["close_approach_data"][0]["relative_velocity"]["kilometers_per_hour"]) + " km/h") 
+            print("Distance to Earth: " + str(field["close_approach_data"][0]["miss_distance"]["kilometers"]) + " km")
+            print("Date & time of closest approach: " + str(field["close_approach_data"][0]["close_approach_date_full"]))
+            
+            if field["is_potentially_hazardous_asteroid"] == 'true':
+                hazard = "\033[1;31;2m This Asteroid is potentially hazardous to Earth \033[0;0m"
+                print(hazard)
+            else:
+                NotHazard = "\033[1;33;2m This Asteroid is not potentially hazardous to Earth \033[0;0m"
+                print(NotHazard)
+        except:
+            print('UNABLE TO ACCESS ALL DATA')
+        print('--------------------------------------')
